@@ -45,7 +45,13 @@ public class subSystem : MonoBehaviour {
 	private GameObject videoPlayerObject;
 	private GameObject notLoop;
 
+	//プラットフォームにより対応ファイルを変える
+	private string[] videoCodecs;
+
 	void Start() {
+		//プラットフォームにより対応ファイルを変える
+		SetVideoCodecs();
+
 		/* 各種GameObject初期化 */
 		videoPlayerObject = transform.Find("Video Player").gameObject;
 		escape = videoPlayerObject.transform.Find("Escape").gameObject;
@@ -83,7 +89,14 @@ public class subSystem : MonoBehaviour {
 		/* txtファイルデータの読み込み */
 		textString = new StreamReader(textPath[0], System.Text.Encoding.GetEncoding("shift_jis")).ReadToEnd();
 		/* mp4ファイルの検索 */
-		videoPath = Directory.GetFiles(@myPath, "*.mp4", System.IO.SearchOption.TopDirectoryOnly);
+		for (int i = 0; i < videoCodecs.Length; i++) {
+			//対応拡張子で検索する
+			videoPath = Directory.GetFiles(@myPath, "*" + videoCodecs[i], System.IO.SearchOption.TopDirectoryOnly);
+			//検索結果が0件でない（1件以上）ならbreak;
+			if (videoPath.Length != 0) {
+				break;
+			}
+		}
 		Debug.Log("videoPath.length " + videoPath.Length);
 		Debug.Log("videoPath " + videoPath[0]);
 		/* mp4ファイル名取得 */
@@ -116,6 +129,43 @@ public class subSystem : MonoBehaviour {
 		maskRect = videoPlayerObject.gameObject.transform.Find("MaskImage").gameObject.GetComponent<RectTransform>();
 		maskImagePosY = maskRect.position.y;
 		maskImageHeight = maskRect.sizeDelta.y;
+	}
+
+	//プラットフォームを認識し、それに合わせて対応拡張子を変更する
+	private void SetVideoCodecs() {
+		//プラットフォームにより対応ファイルを変える
+		//対応ファイルのソース https://docs.unity3d.com/ja/2018.4/Manual/VideoSources-FileCompatibility.html
+		string[] allVideoCodecs = new string[] { ".asf", ".avi", ".dv", ".m4v", ".mov", ".mp4", ".mpg", ".mpeg", ".ogv", ".vp8", ".webm", ".wmv" };
+#if UNITY_EDITOR_WIN
+		int start = 0;
+		int end = 11;
+#elif UNITY_STANDALONE_WIN
+		int start = 0;
+		int end = 11;
+#elif UNITY_EDITOR_OSX
+		int start = 2;
+		int end = 10;
+#elif UNITY_STANDALONE_OSX
+		int start = 2;
+		int end = 10;
+#elif UNITY_EDITOR_LINUX
+		int start = 8;
+		int end = 10;
+#elif UNITY_STANDALONE_LINUX
+		int start = 8;
+		int end = 10;
+#else
+		Debug.LogError("お使いの環境は非対応環境です。");
+		return;
+#endif
+		//対応拡張子の数を決定
+		videoCodecs = new string[end - start];
+		//対応拡張子を格納
+		for (int i = start, j = 0; i < end; i++, j++) {
+			videoCodecs[j] = allVideoCodecs[i];
+			// Debug.Log("videoCodecs " + videoCodecs[j]);
+		}
+		return;
 	}
 
 	void Update() {
